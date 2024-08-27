@@ -1,0 +1,62 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import fs from "fs/promises";
+import dotenv from "dotenv";
+dotenv.config();
+
+const gemini_api_key = process.env.API_KEY;
+const googleAI = new GoogleGenerativeAI(gemini_api_key);
+const geminiConfig = {
+  temperature: 0.4,
+  topP: 1,
+  topK: 32,
+  maxOutputTokens: 4096,
+};
+
+const geminiModel = googleAI.getGenerativeModel({
+  model: "gemini-1.5-flash",  // Updated model name
+  geminiConfig,
+});
+
+const generate = async () => {
+  try {
+    // Read image file
+    const filePath = "someimage1.jpg";
+    const imageFile = await fs.readFile(filePath);
+    const imageBase64 = imageFile.toString("base64");
+
+    const promptConfig = [
+
+        { 
+            text: `Please provide a detailed JSON object about the skin condition called "Acne Vulgaris". The JSON should include:
+              1. "Name": The name of the condition.
+              2. "Description": A detailed explanation of the condition.
+              3. "Causes": A list of possible causes.
+              4. "Symptoms": Common symptoms associated with the condition.
+              5. "HomeRemedies": Suggested home remedies with instructions.
+              6. "PreventionTips": Tips on preventing the condition.
+              7. "TreatmentOptions": Both medical and non-medical treatments.
+              8. "WhenToSeeADoctor": When professional help should be sought.
+              9. "DietaryRecommendations": Food and diet tips for managing the condition.
+              10. "RelatedConditions": Other conditions that might be confused with this one.
+              11. "ExpertAdvice": Advice from dermatologists or skincare experts.
+              12. "FAQs": Common questions and answers regarding this condition.` 
+          },
+        {
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: imageBase64,
+        },
+      },
+    ];
+
+    const result = await geminiModel.generateContent({
+      contents: [{ role: "user", parts: promptConfig }],
+    });
+    const response = await result.response;
+    console.log(response.text());
+  } catch (error) {
+    console.log(" response error", error);
+  }
+};
+
+generate();
